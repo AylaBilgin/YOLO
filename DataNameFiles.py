@@ -1,3 +1,4 @@
+#URL: https://www.udemy.com/share/102CsNCUcZcV5XRXg=/
 
 full_path_to_images = 'dosya yolu'
 
