@@ -8,7 +8,7 @@ with open(full_path_to_images + '/' + 'classes.names', 'w') as names, \
      open(full_path_to_images + '/' + 'classes.txt', 'r') as txt:
 
     for line in txt:
-        names.write(line)  # Copying all info from file txt to names
+        names.write(line) 
 
         c += 1
 
