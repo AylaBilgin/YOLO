@@ -13,9 +13,9 @@ import time
 %matplotlib inline
 
 
-# import darknet functions to perform object detections
+
 from darknet import *
-# load in our YOLOv4 architecture network
+
 network, class_names, class_colors = load_network("/content/darknet/cfg/yolov3-tiny.cfg", "/content/darknet/data_for_colab/obj.data", "/content/gdrive/MyDrive/yolov3-tiny_10000.weights")
 width = network_width(network)
 height = network_height(network)
@@ -42,26 +42,25 @@ if __name__ == '__main__' :
   video.release()
 
 
-# darknet helper function to run detection on image
+
 def darknet_helper(img, width, height):
   darknet_image = make_image(width, height, 3)
   img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
   img_resized = cv2.resize(img_rgb, (width, height),
                               interpolation=cv2.INTER_LINEAR)
 
-  # get image ratios to convert bounding boxes to proper size
+
   img_height, img_width, _ = img.shape
   width_ratio = img_width/width
   height_ratio = img_height/height
 
-  # run model on darknet style image to get detections
   copy_image_from_bytes(darknet_image, img_resized.tobytes())
   detections = detect_image(network, class_names, darknet_image)
   free_image(darknet_image)
   return detections, width_ratio, height_ratio
 
 
-# function to convert the JavaScript object into an OpenCV image
+
 def js_to_image(js_reply):
   """
   Params:
@@ -69,16 +68,16 @@ def js_to_image(js_reply):
   Returns:
           img: OpenCV BGR image
   """
-  # decode base64 image
+  
   image_bytes = b64decode(js_reply.split(',')[1])
-  # convert bytes to numpy array
+  
   jpg_as_np = np.frombuffer(image_bytes, dtype=np.uint8)
-  # decode numpy array into OpenCV BGR image
+  
   img = cv2.imdecode(jpg_as_np, flags=1)
 
   return img
 
-# function to convert OpenCV Rectangle bounding box image into base64 byte string to be overlayed on video stream
+
 def bbox_to_bytes(bbox_array):
   """
   Params:
@@ -86,17 +85,17 @@ def bbox_to_bytes(bbox_array):
   Returns:
         bytes: Base64 image byte string
   """
-  # convert array into PIL image
+  
   bbox_PIL = PIL.Image.fromarray(bbox_array, 'RGBA')
   iobuf = io.BytesIO()
-  # format bbox into png for return
+  
   bbox_PIL.save(iobuf, format='png')
-  # format return string
+  
   bbox_bytes = 'data:image/png;base64,{}'.format((str(b64encode(iobuf.getvalue()), 'utf-8')))
 
   return bbox_bytes  
 
-# JavaScript to properly create our live video stream using our webcam as input
+
 def video_stream():
   js = Javascript('''
     var video;
@@ -232,11 +231,11 @@ def video_frame(label, bbox):
   data = eval_js('stream_frame("{}", "{}")'.format(label, bbox))
   return data
 
-# start streaming video from webcam
+
 video_stream()
-# label for video
+
 label_html = 'Capturing...'
-# initialze bounding box to empty
+
 bbox = ''
 count = 0 
 while True:
@@ -244,16 +243,16 @@ while True:
     if not js_reply:
         break
 
-    # convert JS response to OpenCV Image
+    
     frame = js_to_image(js_reply["img"])
 
-    # create transparent overlay for bounding box
+    
     bbox_array = np.zeros([480,640,4], dtype=np.uint8)
 
-    # call our darknet helper on video frame
+    
     detections, width_ratio, height_ratio = darknet_helper(frame, width, height)
 
-    # loop through detections and draw them on transparent overlay image
+    
     for label, confidence, bbox in detections:
       left, top, right, bottom = bbox2points(bbox)
       left, top, right, bottom = int(left * width_ratio), int(top * height_ratio), int(right * width_ratio), int(bottom * height_ratio)
@@ -283,7 +282,7 @@ while True:
         video.release()
 
     bbox_array[:,:,3] = (bbox_array.max(axis = 2) > 0 ).astype(int) * 255
-    # convert overlay of bbox into bytes
+   
     bbox_bytes = bbox_to_bytes(bbox_array)
-    # update bbox so next frame gets new overlay
+    
     bbox = bbox_bytes   
